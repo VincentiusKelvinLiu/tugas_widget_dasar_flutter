@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/candi.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../models/candi.dart';
 
 class DetailScreen extends StatelessWidget {
   final Candi candi;
@@ -19,14 +19,19 @@ class DetailScreen extends StatelessWidget {
             Stack(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      candi.imageAsset,
-                      width: double.infinity,
-                      height: 300,
-                      fit: BoxFit.cover,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                  ),
+                  child: Hero(
+                    tag: candi.imageAsset,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.asset(
+                        candi.imageAsset,
+                        width: double.infinity,
+                        height: 300,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
@@ -37,11 +42,15 @@ class DetailScreen extends StatelessWidget {
                   ),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.deepPurple[100]?.withValues(alpha: 0.8),
+                      color: Colors.deepPurple[100]?.withValues(
+                        alpha: 0.8,
+                      ),
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
                       icon: const Icon(
                         Icons.arrow_back,
                       ),
@@ -50,15 +59,17 @@ class DetailScreen extends StatelessWidget {
                 ),
               ],
             ),
-
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         candi.name,
@@ -69,14 +80,19 @@ class DetailScreen extends StatelessWidget {
                       ),
                       IconButton(
                         onPressed: () {},
-                        icon: const Icon(Icons.favorite_border),
+                        icon: const Icon(
+                          Icons.favorite_border,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.place, color: Colors.red),
+                      const Icon(
+                        Icons.place,
+                        color: Colors.red,
+                      ),
                       const SizedBox(width: 8),
                       const SizedBox(
                         width: 70,
@@ -87,12 +103,17 @@ class DetailScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Text(': ${candi.location}'),
+                      Expanded(
+                        child: Text(': ${candi.location}'),
+                      ),
                     ],
                   ),
                   Row(
                     children: [
-                      const Icon(Icons.calendar_month, color: Colors.blue),
+                      const Icon(
+                        Icons.calendar_month,
+                        color: Colors.blue,
+                      ),
                       const SizedBox(width: 8),
                       const SizedBox(
                         width: 70,
@@ -103,12 +124,17 @@ class DetailScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Text(': ${candi.built}'),
+                      Expanded(
+                        child: Text(': ${candi.built}'),
+                      ),
                     ],
                   ),
                   Row(
                     children: [
-                      const Icon(Icons.house, color: Colors.green),
+                      const Icon(
+                        Icons.house,
+                        color: Colors.green,
+                      ),
                       const SizedBox(width: 8),
                       const SizedBox(
                         width: 70,
@@ -119,11 +145,15 @@ class DetailScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Text(': ${candi.type}'),
+                      Expanded(
+                        child: Text(': ${candi.type}'),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Divider(color: Colors.deepPurple.shade100),
+                  Divider(
+                    color: Colors.deepPurple.shade100,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'Deskripsi',
@@ -137,13 +167,14 @@ class DetailScreen extends StatelessWidget {
                 ],
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Divider(color: Colors.deepPurple.shade100),
+                  Divider(
+                    color: Colors.deepPurple.shade100,
+                  ),
                   const Text(
                     'Galeri',
                     style: TextStyle(
@@ -159,30 +190,49 @@ class DetailScreen extends StatelessWidget {
                       itemCount: candi.imageUrls.length,
                       itemBuilder: (context, index) {
                         return Padding(
-                          padding: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.only(
+                            right: 8,
+                          ),
                           child: GestureDetector(
                             onTap: () {},
                             child: Container(
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius:
+                                    BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.deepPurple.shade100,
+                                  color:
+                                      Colors.deepPurple.shade100,
                                   width: 2,
                                 ),
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius:
+                                    BorderRadius.circular(10),
                                 child: CachedNetworkImage(
-                                  imageUrl: candi.imageUrls[index],
+                                  imageUrl:
+                                      candi.imageUrls[index],
                                   width: 120,
-                                  height: 120,
+                                  height: 100,
                                   fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    width: 120,
-                                    height: 120,
-                                    color: Colors.deepPurple[50],
-                                  ),
-                                  errorWidget: (context, url, error) => const Icon(Icons.error),
+                                  placeholder:
+                                      (context, url) {
+                                    return Container(
+                                      width: 120,
+                                      height: 100,
+                                      color:
+                                          Colors.deepPurple[50],
+                                    );
+                                  },
+                                  errorWidget:
+                                      (context, url, error) {
+                                    return const SizedBox(
+                                      width: 120,
+                                      height: 100,
+                                      child: Icon(
+                                        Icons.error,
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             ),
