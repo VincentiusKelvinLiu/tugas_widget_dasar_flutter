@@ -15,13 +15,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String _errorText = '';
   bool _obscurePassword = true;
 
-@override
-void dispose() {
-  _fullNameController.dispose();
-  _usernameController.dispose();
-  _passwordController.dispose();
-  super.dispose();
-}
+  void _signUp() {
+    final String fullName = _fullNameController.text.trim();
+    final String username = _usernameController.text.trim();
+    final String password = _passwordController.text.trim();
+
+    if (password.length < 8 ||
+        !password.contains(RegExp(r'[A-Z]')) ||
+        !password.contains(RegExp(r'[a-z]')) ||
+        !password.contains(RegExp(r'[0-9]')) ||
+        !password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      setState(() {
+        _errorText = 'Minimal 8 karakter, kombinasi huruf besar, huruf kecil, angka, dan karakter khusus';
+      });
+      return;
+    }
+
+    setState(() {
+      _errorText = '';
+    });
+
+    debugPrint('*** Sign Up berhasil! ***');
+    debugPrint('Nama: $fullName');
+    debugPrint('Nama Pengguna: $username');
+    debugPrint('Password: $password');
+  }
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,9 +109,7 @@ void dispose() {
                   const SizedBox(height: 20),
 
                   ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: _signUp,
                     child: const Text('Sign Up'),
                   ),
 
