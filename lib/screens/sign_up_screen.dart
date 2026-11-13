@@ -13,8 +13,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   String _errorText = '';
-  bool _isSignedIn = false;
   bool _obscurePassword = true;
+
+@override
+void dispose() {
+  _fullNameController.dispose();
+  _usernameController.dispose();
+  _passwordController.dispose();
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -76,14 +83,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(height: 20),
 
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
                     child: const Text('Sign Up'),
                   ),
 
                   const SizedBox(height: 10),
 
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
                     child: const Text('Sudah punya akun? Masuk di sini.'),
                   ),
                 ],

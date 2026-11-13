@@ -22,9 +22,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void signOut() {
-    setState(() {
-      isSignedIn = false;
-    });
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/',
+      (route) => false,
+    );
   }
 
   @override
