@@ -44,10 +44,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final encrypt.Key key = encrypt.Key.fromLength(32);
     final encrypt.IV iv = encrypt.IV.fromLength(16);
     final encrypt.Encrypter encrypter = encrypt.Encrypter(encrypt.AES(key));
+    final encrypt.Encrypted encryptedFullName = encrypter.encrypt(fullName, iv: iv);
     final encrypt.Encrypted encryptedUsername = encrypter.encrypt(username, iv: iv);
     final encrypt.Encrypted encryptedPassword = encrypter.encrypt(password, iv: iv);
 
-    await prefs.setString('fullName', fullName);
+    await prefs.setString(
+      'fullName',
+      encryptedFullName.base64,
+    );
     await prefs.setString(
       'username',
       encryptedUsername.base64,

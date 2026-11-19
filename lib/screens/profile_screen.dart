@@ -28,39 +28,119 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String encryptedFullName = prefs.getString('fullName') ?? '';
     final String encryptedUsername = prefs.getString('username') ?? '';
     final String keyString = prefs.getString('key') ?? '';
     final String ivString = prefs.getString('iv') ?? '';
+    String decryptedFullName = 'Belum ada data';
     String decryptedUsername = 'Belum ada data';
 
-    if (encryptedUsername.isNotEmpty &&
-        keyString.isNotEmpty &&
-        ivString.isNotEmpty) {
+    if (keyString.isNotEmpty && ivString.isNotEmpty) {
       final encrypt.Key key = encrypt.Key.fromBase64(keyString);
       final encrypt.IV iv = encrypt.IV.fromBase64(ivString);
       final encrypt.Encrypter encrypter = encrypt.Encrypter(encrypt.AES(key));
-      decryptedUsername = encrypter.decrypt64(
-        encryptedUsername,
-        iv: iv,
-      );
+
+      if (encryptedFullName.isNotEmpty) {
+        decryptedFullName = encrypter.decrypt64(
+          encryptedFullName,
+          iv: iv,
+        );
+      }
+
+      if (encryptedUsername.isNotEmpty) {
+        decryptedUsername = encrypter.decrypt64(
+          encryptedUsername,
+          iv: iv,
+        );
+      }
     }
 
     if (!mounted) return;
     setState(() {
       isSignedIn = prefs.getBool('isSignedIn') ?? false;
-      fullName = prefs.getString('fullName') ?? 'Belum ada data';
+      fullName = decryptedFullName;
       userName = decryptedUsername;
     });
   }
 
   Future<void> signOut() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+
     await prefs.setBool('isSignedIn', false);
+    await prefs.setString('fullName', '');
+    await prefs.setString('username', '');
+    await prefs.setString('password', '');
+
     if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(
       context,
       '/',
       (route) => false,
+    );
+  }
+
+  Future<void> editFullName() async {
+    String newFullName = fullName;
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Edit Nama Lengkap'),
+          content: TextFormField(
+            initialValue: fullName,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Nama Lengkap',
+            ),
+            onChanged: (String value) {
+              newFullName = value;
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final String updatedFullName =newFullName.trim();
+                if (updatedFullName.isEmpty) return;
+                final SharedPreferences prefs = await SharedPreferences.getInstance();
+                final String keyString = prefs.getString('key') ?? '';
+                final String ivString = prefs.getString('iv') ?? '';
+
+                if (keyString.isEmpty || ivString.isEmpty) {
+                  return;
+                }
+
+                final encrypt.Key key = encrypt.Key.fromBase64(keyString);
+                final encrypt.IV iv = encrypt.IV.fromBase64(ivString);
+                final encrypt.Encrypter encrypter = encrypt.Encrypter(
+                  encrypt.AES(key),
+                );
+                final encrypt.Encrypted encryptedName = encrypter.encrypt(
+                  updatedFullName,
+                  iv: iv,
+                );
+                await prefs.setString(
+                  'fullName',
+                  encryptedName.base64,
+                );
+
+                if (!mounted) return;
+                if (!dialogContext.mounted) return;
+                setState(() {
+                  fullName = updatedFullName;
+                });
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -114,7 +194,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
 
-                // TODO: 3. Buat bagian ProfileInfo yang berisi info profil
                 const SizedBox(height: 20),
                 Divider(color: Colors.deepPurple[100]),
                 const SizedBox(height: 4),
@@ -135,9 +214,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   label: 'Nama',
                   value: fullName,
                   showEditIcon: isSignedIn,
-                  onEditPressed: () {
-                    debugPrint('Icon edit ditekan ...');
-                  },
+                  onEditPressed: editFullName,
                   iconColor: Colors.blue,
                 ),
 
@@ -152,7 +229,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   iconColor: Colors.red,
                 ),
 
-                // TODO: 4. Buat ProfileActions yang berisi TextButton sign in/out
                 const SizedBox(height: 4),
                 Divider(color: Colors.deepPurple[100]),
                 const SizedBox(height: 20),
