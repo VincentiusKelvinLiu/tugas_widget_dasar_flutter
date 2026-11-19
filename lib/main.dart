@@ -3,6 +3,7 @@ import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/favorite_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/sign_in_screen.dart';
 import 'screens/sign_up_screen.dart';
 
 void main() {
@@ -36,9 +37,11 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const SignUpScreen(),
+      initialRoute: '/',
       routes: {
-        '/main': (context) => const MainScreen(),
+        '/': (context) => const MainScreen(),
+        '/signin': (context) => const SignInScreen(),
+        '/signup': (context) => const SignUpScreen(),
       },
     );
   }

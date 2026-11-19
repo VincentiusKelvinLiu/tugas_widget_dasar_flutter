@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -15,7 +16,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String _errorText = '';
   bool _obscurePassword = true;
 
-  void _signUp() {
+  void _signUp() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String fullName = _fullNameController.text.trim();
     final String username = _usernameController.text.trim();
     final String password = _passwordController.text.trim();
@@ -35,10 +37,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _errorText = '';
     });
 
-    debugPrint('*** Sign Up berhasil! ***');
-    debugPrint('Nama: $fullName');
-    debugPrint('Nama Pengguna: $username');
-    debugPrint('Password: $password');
+    await prefs.setString('fullName', fullName);
+    await prefs.setString('username', username);
+    await prefs.setString('password', password);
+
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/signin');
   }
 
   @override

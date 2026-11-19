@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'sign_up_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -20,6 +20,33 @@ class _SignInScreenState extends State<SignInScreen> {
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _signIn() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String inputUsername = _usernameController.text.trim();
+    final String inputPassword = _passwordController.text.trim();
+    final String? savedUsername = prefs.getString('username');
+    final String? savedPassword = prefs.getString('password');
+
+    if (inputUsername != savedUsername || inputPassword != savedPassword) {
+      setState(() {
+        _errorText = 'Nama pengguna atau kata sandi salah';
+      });
+      return;
+    }
+
+    setState(() {
+      _errorText = '';
+    });
+    await prefs.setBool('isSignedIn', true);
+
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/',
+      (route) => false,
+    );
   }
 
   @override
@@ -72,9 +99,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   const SizedBox(height: 20),
 
                   ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/main');
-                    },
+                    onPressed: _signIn,
                     child: const Text('Sign In'),
                   ),
 
@@ -82,12 +107,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
                   TextButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SignUpScreen(),
-                        ),
-                      );
+                      Navigator.pushNamed(context, '/signup');
                     },
                     child: const Text('Belum punya akun? Daftar di sini.'),
                   ),

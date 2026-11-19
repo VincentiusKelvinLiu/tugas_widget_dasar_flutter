@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/profile_info_item.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -9,19 +10,35 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // TODO: 1. Deklarasikan variabel yang dibutuhkan
-  bool isSignedIn = true;
+  bool isSignedIn = false;
   String fullName = 'Vincentius Kelvin Liu';
   String userName = 'Kelvin';
   int favoriteCandiCount = 3;
 
   void signIn() {
+    Navigator.pushNamed(context, '/signin');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
-      isSignedIn = true;
+      isSignedIn = prefs.getBool('isSignedIn') ?? false;
+      fullName = prefs.getString('fullName') ?? 'Belum ada data';
+      userName = prefs.getString('username') ?? 'Belum ada data';
     });
   }
 
-  void signOut() {
+  Future<void> signOut() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isSignedIn', false);
+    if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(
       context,
       '/',

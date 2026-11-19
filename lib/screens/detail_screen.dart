@@ -1,14 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/candi.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class DetailScreen extends StatelessWidget {
+class DetailScreen extends StatefulWidget {
   final Candi candi;
 
   const DetailScreen({
     super.key,
     required this.candi,
   });
+
+  @override
+  State<DetailScreen> createState() => _DetailScreenState();
+}
+
+class _DetailScreenState extends State<DetailScreen> {
+  bool isFavorite = false;
+
+  Candi get candi => widget.candi;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteStatus();
+  }
+
+  Future<void> _loadFavoriteStatus() async {
+    final SharedPreferences prefs =
+        await SharedPreferences.getInstance();
+
+    final bool savedFavorite =
+        prefs.getBool('favorite_${candi.name}') ?? false;
+
+    if (!mounted) return;
+
+    setState(() {
+      isFavorite = savedFavorite;
+    });
+  }
+
+  Future<void> _toggleFavorite() async {
+    final SharedPreferences prefs =
+        await SharedPreferences.getInstance();
+
+    final bool newFavoriteStatus = !isFavorite;
+
+    await prefs.setBool(
+      'favorite_${candi.name}',
+      newFavoriteStatus,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      isFavorite = newFavoriteStatus;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,9 +127,12 @@ class DetailScreen extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        onPressed: () {},
-                        icon: const Icon(
-                          Icons.favorite_border,
+                        onPressed: _toggleFavorite,
+                        icon: Icon(
+                          isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: isFavorite ? Colors.red : null,
                         ),
                       ),
                     ],
