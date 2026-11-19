@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/profile_info_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -27,11 +28,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String encryptedUsername = prefs.getString('username') ?? '';
+    final String keyString = prefs.getString('key') ?? '';
+    final String ivString = prefs.getString('iv') ?? '';
+    String decryptedUsername = 'Belum ada data';
+
+    if (encryptedUsername.isNotEmpty &&
+        keyString.isNotEmpty &&
+        ivString.isNotEmpty) {
+      final encrypt.Key key = encrypt.Key.fromBase64(keyString);
+      final encrypt.IV iv = encrypt.IV.fromBase64(ivString);
+      final encrypt.Encrypter encrypter = encrypt.Encrypter(encrypt.AES(key));
+      decryptedUsername = encrypter.decrypt64(
+        encryptedUsername,
+        iv: iv,
+      );
+    }
+
     if (!mounted) return;
     setState(() {
       isSignedIn = prefs.getBool('isSignedIn') ?? false;
       fullName = prefs.getString('fullName') ?? 'Belum ada data';
-      userName = prefs.getString('username') ?? 'Belum ada data';
+      userName = decryptedUsername;
     });
   }
 
