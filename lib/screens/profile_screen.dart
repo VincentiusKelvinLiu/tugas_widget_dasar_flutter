@@ -2,6 +2,8 @@ import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wisata_candi/widgets/edit_fullname_dialog.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 import '../widgets/profile_info_item.dart';
 
@@ -19,6 +21,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String userName = '';
   int favoriteCandiCount = 0;
   late Color iconColor;
+
+  String profileImagePath = '';
+  final ImagePicker _imagePicker = ImagePicker();
 
   // Mengambil data pengguna dari SharedPreferences
   Future<void> loadUserData() async {
@@ -94,10 +99,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     loadUserData();
     loadFavoriteCount();
+    loadProfileImage();
   }
 
   // TODO: 5. Implementasi fungsi signIn
@@ -117,11 +122,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await prefs.setString('fullname', '');
     await prefs.setString('username', '');
     await prefs.setString('password', '');
+    await prefs.remove('profile_image_path');
 
     setState(() {
       isSignedIn = false;
       fullName = '';
       userName = '';
+      profileImagePath = '';
     });
   }
 
@@ -174,6 +181,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> loadProfileImage() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String savedPath = prefs.getString('profile_image_path') ?? '';
+
+    if (!mounted) return;
+
+    setState(() {
+      profileImagePath = savedPath;
+    });
+  }
+
+  Future<void> pickProfileImage(ImageSource source) async {
+    try {
+      final XFile? selectedImage = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
+
+      if (selectedImage == null) return;
+
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      await prefs.setString(
+        'profile_image_path',
+        selectedImage.path,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        profileImagePath = selectedImage.path;
+      });
+    } catch (e) {
+      debugPrint('Gagal memilih gambar profil: $e');
+    }
+  }
+
+  Future<void> showImagePicker() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext bottomSheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ListTile(
+                title: Text(
+                  'Sumber Gambar',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Galeri'),
+                onTap: () async {
+                  Navigator.of(bottomSheetContext).pop();
+                  await pickProfileImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Kamera'),
+                onTap: () async {
+                  Navigator.of(bottomSheetContext).pop();
+                  await pickProfileImage(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -204,21 +285,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             shape: BoxShape.circle,
                           ),
-                          child: const CircleAvatar(
+                          child: CircleAvatar(
                             radius: 50,
-                            backgroundImage: AssetImage(
-                              'images/placeholder_image.png',
-                            ),
+                            backgroundImage:
+                                profileImagePath.isNotEmpty && File(profileImagePath).existsSync()
+                                ? FileImage(File(profileImagePath))
+                                : const AssetImage(
+                                    'images/placeholder_image.png',
+                                  ),
                           ),
                         ),
                         if (isSignedIn)
-                          IconButton(
-                            onPressed: () {},
-                            icon: Icon(
-                              Icons.camera_alt,
-                              color: Colors.deepPurple[50],
-                            ),
+                        IconButton(
+                          onPressed: showImagePicker,
+                          icon: Icon(
+                            Icons.camera_alt,
+                            color: Colors.deepPurple[50],
                           ),
+                        ),
                       ],
                     ),
                   ),
