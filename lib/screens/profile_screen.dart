@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
-import '../widgets/profile_info_item.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
+import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wisata_candi/widgets/edit_fullname_dialog.dart';
+
+import '../widgets/profile_info_item.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -11,137 +13,165 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  // TODO: 1. Deklarasikan variabel yang dibutuhkan
   bool isSignedIn = false;
-  String fullName = 'Vincentius Kelvin Liu';
-  String userName = 'Kelvin';
-  int favoriteCandiCount = 3;
+  String fullName = '';
+  String userName = '';
+  int favoriteCandiCount = 0;
+  late Color iconColor;
 
-  void signIn() {
-    Navigator.pushNamed(context, '/signin');
-  }
+  // Mengambil data pengguna dari SharedPreferences
+  Future<void> loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
 
-  @override
-  void initState() {
-    super.initState();
-    _loadProfile();
-  }
+    final signedIn = prefs.getBool('isSignedIn') ?? false;
 
-  Future<void> _loadProfile() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String encryptedFullName = prefs.getString('fullName') ?? '';
-    final String encryptedUsername = prefs.getString('username') ?? '';
-    final String keyString = prefs.getString('key') ?? '';
-    final String ivString = prefs.getString('iv') ?? '';
-    String decryptedFullName = 'Belum ada data';
-    String decryptedUsername = 'Belum ada data';
+    if (!signedIn) {
+      setState(() {
+        isSignedIn = false;
+        fullName = '';
+        userName = '';
+      });
+      return;
+    }
 
-    if (keyString.isNotEmpty && ivString.isNotEmpty) {
-      final encrypt.Key key = encrypt.Key.fromBase64(keyString);
-      final encrypt.IV iv = encrypt.IV.fromBase64(ivString);
-      final encrypt.Encrypter encrypter = encrypt.Encrypter(encrypt.AES(key));
+    try {
+      final keyString = prefs.getString('key') ?? '';
+      final ivString = prefs.getString('iv') ?? '';
 
-      if (encryptedFullName.isNotEmpty) {
-        decryptedFullName = encrypter.decrypt64(
-          encryptedFullName,
-          iv: iv,
-        );
+      final encryptedName = prefs.getString('fullname') ?? '';
+      final encryptedUsername = prefs.getString('username') ?? '';
+
+      if (keyString.isEmpty ||
+          ivString.isEmpty ||
+          encryptedName.isEmpty ||
+          encryptedUsername.isEmpty) {
+        return;
       }
 
-      if (encryptedUsername.isNotEmpty) {
-        decryptedUsername = encrypter.decrypt64(
-          encryptedUsername,
-          iv: iv,
-        );
+      final key = encrypt.Key.fromBase64(keyString);
+      final iv = encrypt.IV.fromBase64(ivString);
+
+      final encrypter = encrypt.Encrypter(encrypt.AES(key));
+
+      final decryptedName = encrypter.decrypt64(encryptedName, iv: iv);
+
+      final decryptedUsername = encrypter.decrypt64(encryptedUsername, iv: iv);
+
+      if (!mounted) return;
+
+      setState(() {
+        isSignedIn = true;
+        fullName = decryptedName;
+        userName = decryptedUsername;
+      });
+    } catch (e) {
+      debugPrint('Gagal mengambil data pengguna: $e');
+    }
+  }
+
+  Future<void> loadFavoriteCount() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Mengambil seluruh key SharedPreferences
+    final keys = prefs.getKeys();
+
+    // Menghitung jumlah favorit yang bernilai true
+    int count = 0;
+
+    for (final key in keys) {
+      if (key.startsWith('favorite_') && prefs.getBool(key) == true) {
+        count++;
       }
     }
 
     if (!mounted) return;
+
     setState(() {
-      isSignedIn = prefs.getBool('isSignedIn') ?? false;
-      fullName = decryptedFullName;
-      userName = decryptedUsername;
+      favoriteCandiCount = count;
     });
   }
 
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    loadUserData();
+    loadFavoriteCount();
+  }
+
+  // TODO: 5. Implementasi fungsi signIn
+  void signIn() async {
+    await Navigator.pushNamed(context, '/signin');
+
+    // Memuat ulang data setelah kembali dari halaman Sign In
+    if (!mounted) return;
+    await loadUserData();
+  }
+
+  // TODO: 6. Implementasi fungsi signOut
   Future<void> signOut() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     await prefs.setBool('isSignedIn', false);
-    await prefs.setString('fullName', '');
+    await prefs.setString('fullname', '');
     await prefs.setString('username', '');
     await prefs.setString('password', '');
 
-    if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/',
-      (route) => false,
-    );
+    setState(() {
+      isSignedIn = false;
+      fullName = '';
+      userName = '';
+    });
   }
 
+  // TODO: 7. Implementasi fungsi Edit Full Name
   Future<void> editFullName() async {
-    String newFullName = fullName;
-    await showDialog<void>(
+    // Tampilkan dialog edit nama
+    final newName = await showDialog<String>(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Edit Nama Lengkap'),
-          content: TextFormField(
-            initialValue: fullName,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Nama Lengkap',
-            ),
-            onChanged: (String value) {
-              newFullName = value;
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Batal'),
-            ),
-            TextButton(
-              onPressed: () async {
-                final String updatedFullName =newFullName.trim();
-                if (updatedFullName.isEmpty) return;
-                final SharedPreferences prefs = await SharedPreferences.getInstance();
-                final String keyString = prefs.getString('key') ?? '';
-                final String ivString = prefs.getString('iv') ?? '';
-
-                if (keyString.isEmpty || ivString.isEmpty) {
-                  return;
-                }
-
-                final encrypt.Key key = encrypt.Key.fromBase64(keyString);
-                final encrypt.IV iv = encrypt.IV.fromBase64(ivString);
-                final encrypt.Encrypter encrypter = encrypt.Encrypter(
-                  encrypt.AES(key),
-                );
-                final encrypt.Encrypted encryptedName = encrypter.encrypt(
-                  updatedFullName,
-                  iv: iv,
-                );
-                await prefs.setString(
-                  'fullName',
-                  encryptedName.base64,
-                );
-
-                if (!mounted) return;
-                if (!dialogContext.mounted) return;
-                setState(() {
-                  fullName = updatedFullName;
-                });
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Simpan'),
-            ),
-          ],
-        );
+      builder: (dialogContext) {
+        return EditFullNameDialog(initialName: fullName);
       },
     );
+
+    // Validasi hasil dialog
+    if (!mounted || newName == null || newName.isEmpty) {
+      return;
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      final keyString = prefs.getString('key') ?? '';
+      final ivString = prefs.getString('iv') ?? '';
+
+      if (keyString.isEmpty || ivString.isEmpty) {
+        throw Exception('Encryption key atau IV tidak ditemukan');
+      }
+
+      final key = encrypt.Key.fromBase64(keyString);
+      final iv = encrypt.IV.fromBase64(ivString);
+
+      final encrypter = encrypt.Encrypter(encrypt.AES(key));
+
+      // Enkripsi nama baru
+      final encryptedName = encrypter.encrypt(newName, iv: iv);
+
+      // Simpan ke SharedPreferences
+      await prefs.setString('fullname', encryptedName.base64);
+
+      if (!mounted) return;
+
+      // Perbarui tampilan
+      setState(() {
+        fullName = newName;
+      });
+
+      debugPrint('Nama berhasil diperbarui');
+    } catch (e) {
+      debugPrint('Gagal mengubah nama: $e');
+    }
   }
 
   @override
@@ -193,22 +223,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
-
+                // TODO: 3. Buat bagian ProfileInfo yang berisi info profil
                 const SizedBox(height: 20),
                 Divider(color: Colors.deepPurple[100]),
                 const SizedBox(height: 4),
-
                 ProfileInfoItem(
                   icon: Icons.lock,
                   label: 'Pengguna',
                   value: userName,
                   iconColor: Colors.amber,
                 ),
-
                 const SizedBox(height: 4),
                 Divider(color: Colors.deepPurple[100]),
                 const SizedBox(height: 4),
-
                 ProfileInfoItem(
                   icon: Icons.person,
                   label: 'Nama',
@@ -217,22 +244,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onEditPressed: editFullName,
                   iconColor: Colors.blue,
                 ),
-
                 const SizedBox(height: 4),
                 Divider(color: Colors.deepPurple[100]),
                 const SizedBox(height: 4),
-
                 ProfileInfoItem(
                   icon: Icons.favorite,
                   label: 'Favorit',
-                  value: favoriteCandiCount > 0 ? '$favoriteCandiCount' : '',
+                  value: favoriteCandiCount.toString(),
                   iconColor: Colors.red,
                 ),
-
+                // TODO: 4. Buat ProfileActions yang berisi TextButton sign in/out
                 const SizedBox(height: 4),
                 Divider(color: Colors.deepPurple[100]),
                 const SizedBox(height: 20),
-
                 isSignedIn
                     ? TextButton(
                         onPressed: signOut,

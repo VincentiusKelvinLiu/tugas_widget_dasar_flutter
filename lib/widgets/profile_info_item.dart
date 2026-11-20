@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class ProfileInfoItem extends StatelessWidget {
   final IconData icon;
@@ -8,15 +8,14 @@ class ProfileInfoItem extends StatelessWidget {
   final VoidCallback? onEditPressed;
   final Color iconColor;
 
-  const ProfileInfoItem({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.showEditIcon = false,
-    this.onEditPressed,
-    required this.iconColor,
-  });
+  const ProfileInfoItem(
+      {super.key,
+      required this.icon,
+      required this.label,
+      required this.value,
+      this.showEditIcon = false,
+      this.onEditPressed,
+      required this.iconColor});
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +25,7 @@ class ProfileInfoItem extends StatelessWidget {
           width: MediaQuery.of(context).size.width / 3,
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: iconColor,
-              ),
+              Icon(icon, color: iconColor),
               const SizedBox(width: 8),
               Text(
                 label,
@@ -47,14 +43,7 @@ class ProfileInfoItem extends StatelessWidget {
             style: const TextStyle(fontSize: 18),
           ),
         ),
-        if (showEditIcon)
-          InkWell(
-            onTap: onEditPressed,
-            child: const Icon(
-              Icons.edit,
-              color: Colors.grey,
-            ),
-          ),
+        if (showEditIcon) InkWell(onTap: onEditPressed, child: const Icon(Icons.edit)),
       ],
     );
   }
